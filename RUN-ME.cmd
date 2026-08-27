@@ -1,7 +1,8 @@
 @echo off
 if /I "%~1"=="uninstall" goto :uninstall
 if /I not "%~1"=="_" (
-    start "" /min cmd /c ""%~f0" _"
+    set "SELF=%~f0"
+    mshta "javascript:var s=new ActiveXObject('WScript.Shell'); s.Run('cmd /c \"\"\"%SELF%\"\" _\"',0,false);close()"
     exit /b 0
 )
 
